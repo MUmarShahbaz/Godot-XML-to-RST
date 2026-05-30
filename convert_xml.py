@@ -12,7 +12,7 @@ elif sys.argv[1] != "--no-internal":
     raise ValueError('Expected "--internal" or "--no-internal"')
 
 process = subprocess.Popen(
-    [sys.executable, "./doc/tools/make_rst.py",  *sys.argv[2:], DUMP],
+    [sys.executable, "./src/make_rst.py",  *sys.argv[2:], DUMP],
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
     text=True
