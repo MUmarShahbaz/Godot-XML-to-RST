@@ -6,7 +6,7 @@ import subprocess
 DUMP = r"./_dump"
 # Renew DUMP
 if os.path.exists(DUMP): shutil.rmtree(DUMP)
-shutil.copytree(r"./xml", DUMP)
+shutil.copytree(sys.argv.pop(), DUMP)
 if sys.argv[1] == "--internal": shutil.copytree(r"./doc/classes", DUMP, dirs_exist_ok=True)
 elif sys.argv[1] != "--no-internal":
     raise ValueError('Expected "--internal" or "--no-internal"')
