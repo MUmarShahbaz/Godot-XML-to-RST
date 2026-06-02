@@ -1,0 +1,141 @@
+name: Godot XML to RST
+description: Converts godot's xml docs into .rst
+
+inputs:
+  short_name:
+    description: A short name for your project
+    required: false
+    default: ""
+
+  name:
+    description: Full name of your project
+    required: true
+  
+  major:
+    description: Major from the project version eg. [1].2.3
+    required: true
+
+  minor:
+    description: Minor from the project version eg. 1.[2].3
+    required: true
+
+  patch:
+    description: Patch from the project version eg. 1.2.[3]
+    required: true
+
+  status:
+    description: Current status of the project eg. beta or stable
+    required: true
+  
+  module_config:
+    description: module_config in version.py
+    required: false
+    default: ""
+  
+  website:
+    description: Project website
+    required: false
+    default: ""
+
+  docs:
+    description: docs in version.py
+    required: false
+    default: "latest"
+
+  built-in:
+    description: Use built-in godot docs?
+    required: false
+    default: "false"
+  
+  language:
+    description: Any of the following codes [en, es, fr, ga, it, ko, ru, ta, uk, zh_Hans, zh_Hant]
+    required: false
+    default: en
+
+  other:
+    description: Write any RAW CLI that godot's make_rst.py accepts excluding input, output or language. This is usually not needed.
+    required: false
+    default: ""
+
+  xml:
+    description: Path to XML Docs
+    required: true
+
+outputs:
+  path:
+    description: File path to the generated .zip
+    value: ${{ steps.set_output.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        repository: MUmarShahbaz/Godot-XML-to-RST
+        ref: v1
+        path: xml_converter
+  
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.14
+
+    - name: Rewrite version.py
+      shell: bash
+      run: |
+        set -e
+
+        if [ "${{ inputs.short_name }}" == "" ]; then
+          short_name="${{ inputs.name }}"
+        else
+          short_name="${{ inputs.short_name }}"
+        fi
+
+        cat > xml_converter/src/version.py << EOF
+        short_name = "$short_name"
+        name = "${{ inputs.name }}"
+        major = ${{ inputs.major }}
+        minor = ${{ inputs.minor }}
+        patch = ${{ inputs.patch }}
+        status = "${{ inputs.status }}"
+        module_config = "${{ inputs.module_config }}"
+        website = "${{ inputs.website }}"
+        docs = "${{ inputs.docs }}"
+        EOF
+
+        cat xml_converter/src/version.py
+
+    - name: Run converter
+      shell: bash
+      run: |
+        set -e
+
+        if [ "${{ inputs.built-in }}" = "true" ]; then
+          INTERNAL_FLAG="--internal"
+        else
+          INTERNAL_FLAG="--no-internal"
+        fi
+
+        python xml_converter/convert_xml.py \
+          $INTERNAL_FLAG \
+          -o out \
+          -l ${{ inputs.language }} \
+          ${{ inputs.other }} \
+          "${{ inputs.xml }}"
+
+    - name: Zip output
+      shell: bash
+      run: |
+        if [ ! -d "out" ]; then
+          echo "Error: Output directory 'out' was not created"
+          exit 1
+        fi
+        cd out
+        zip -r "converted.zip" *
+
+    - name: Set output
+      id: set_output
+      shell: bash
+      run: |
+        echo "path=out/converted.zip" >> $GITHUB_OUTPUT

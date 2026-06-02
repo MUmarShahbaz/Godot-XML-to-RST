@@ -1,0 +1,9 @@
+{
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-action": [
+      "action.yml",
+    ]
+  },
+  "yaml.validate": true,
+  "editor.tabSize": 2
+}
